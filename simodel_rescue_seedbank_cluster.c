@@ -947,9 +947,15 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 		    //printf(" Genetic rescue: %d\n",gen_rescue_pool);
 		    //printf(" Demographic rescue: %d\n",demo_rescue_bool);
             //printf(" Spatial rescue: %d\n",safe_sites_bool);
-            kill_plants(r,d);
+            if(fire_flag == 1){ /// Flags if there will be fire events in the simulations or not at all
+				if(prob_fire_freq >  gsl_rng_uniform(r)){ /// prob_fire_freq: frequency of fire events along one simulation 
+					kill_plants(r,fire_death_prob);   /// fire_death_prob: increased (compared to "d") probability of death by a fire event
+				}else{
+					kill_plants(r,d);
+				}
+			}else   kill_plants(r,d);
             printf(" FLAG 1 \n");      
-            new_plants(r,est);
+            new_plants(r,est); /// Add positive effect of fire in seed germination probability when species is serotinous
             printf(" FLAG 2 \n"); 
             means5(g,rep,ft6,ft7,ft8);
             printf(" FLAG 3 \n");
