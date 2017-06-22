@@ -82,7 +82,7 @@ void gene_data(int,int,int,int,float **,float **,float **,float **,float **,
       float **,float **,float **,float *,float *);
 void getfile(void);
 void grand_mean1(int,float **,float **,float **,int *,float **,float **,float **,
-      int *);
+      int *, Vector *);
 void grand_mean2(int,int *,float **,float **,float **,float **,float **,float **,
       float **);
 void grand_mean3(int,int *,float **,float **,float **,float **,float **,float **,
@@ -140,7 +140,7 @@ void safe_sites(gsl_rng *r, float);
 void SI_model(int,int,double,int,int,float,float **,float **,float **,int *,int,
       int,int,float **,float **,float **,float **,float **,float **,float **,
       float **,float **,float **,int *,float **,float **,float **,float **,
-      float **,float **,float **,float **,int,void (*)(),void (*)(),double,int, int, int, float, float, float, float, int, Vector *, Vector *, int, float, float, float, int);
+      float **,float **,float **,float **,int,void (*)(),void (*)(),double,int, int, int, float, float, float, float, int, Vector *, Vector *,Vector *, int, float, float, float, int);
       
 int **imatrix(long int,long int,long int,long int);
 int *ivector(long int,long int);
@@ -198,9 +198,10 @@ int main(int argc, char *argv[])
     float sites_increase = SITES_INCREASE, prob_new_S_allele = PNEW_S_ALLELE, prob_new_allele = PNEW_N_ALLELE, fire_prob = FIRE_PROB, fire_prob_death = FIRE_PROB_DEATH, est_fire = FIRE_EST, fire_postive_seeds = FIRE_SERO;
     // declare and initialize a new vector
     Vector vector_S_alleles;
-    vector_init(&vector_S_alleles);
     Vector vector_N_alleles;
-    vector_init(&vector_N_alleles);    
+    Vector vector_quasi_ext;
+    
+    
 
     while((option = getopt(argc, argv,"r:g:o:n:s:f:m:v:l:xyzk:p:t:a:b:c:d:e:h:i:u:")) != -1)
       {
@@ -311,6 +312,8 @@ int main(int argc, char *argv[])
               ft8 = fmatrix(0,gen,0,1); /* avg variance: post-dispersal seeds/mother */
               nrn = ivector(0,gen);
               nrp = ivector(0,gen);
+              vector_init(&vector_quasi_ext);                  /* Quasi-extinction probability vector init */
+              vector_set(&vector_quasi_ext, gen, 0); /* Quasi-extinction probability vector fill with zeroes till maximum generations per run */
               header(fpw1,runs,gen,minr,b0,d,pdist,sdist,est,inum,sites,nloc,sloc,
                      plpr,sitype);
               header(fpw2,runs,gen,minr,b0,d,pdist,sdist,est,inum,sites,nloc,sloc,
@@ -326,20 +329,27 @@ int main(int argc, char *argv[])
               mate_system(plpr,sitype,&repro,&mean3);                                                                               
               for(rr=0;rr<runs;rr++)
                 { 
+				  vector_init(&vector_S_alleles);
+				  vector_init(&vector_N_alleles);	
                   init_values();    
                   safe_sites(r,sites);
                   init_plants(r,inum,nloc,sloc,lm,lv,&vector_S_alleles,&vector_N_alleles);   
                   printf("Current Run: %d\n",rr+1);
                   SI_model(gen,minr,d,pdist,sdist,est,mnv,mnr,myr,nrn,sloc,nloc,lint,gn1,
                            gn2,gn3,gn4,gn5,gn6,gn7,ec1,ec2,ec3,nrp,ft1,ft2,ft3,ft4,ft5,
-                           ft6,ft7,ft8,rr,repro,mean3,b0,safe_sites_bool,demo_rescue_bool,gen_rescue_pool,sites_increase,pop_size_interv,prob_new_S_allele,prob_new_allele,interv_threshold,&vector_S_alleles,&vector_N_alleles, fire_flag, fire_prob, fire_prob_death, est_fire, fire_postive_seeds);                                            
+                           ft6,ft7,ft8,rr,repro,mean3,b0,safe_sites_bool,demo_rescue_bool,gen_rescue_pool,sites_increase,pop_size_interv,prob_new_S_allele,prob_new_allele,interv_threshold,&vector_S_alleles,&vector_N_alleles, &vector_quasi_ext, fire_flag, fire_prob, fire_prob_death, est_fire, fire_postive_seeds);
+                  /// Add free_vector possibly to free memory of vector_S_alleles
+                  vector_free(&vector_S_alleles);
+                  vector_free(&vector_N_alleles);                                               
                 }
               persist(runs,rcnt,gen);    
-              grand_mean1(gen,mnv,mnr,myr,nrn,ec1,ec2,ec3,nrp);
+              grand_mean1(gen,mnv,mnr,myr,nrn,ec1,ec2,ec3,nrp,&vector_quasi_ext);
               grand_mean2(gen,nrn,gn1,gn2,gn3,gn4,gn5,gn6,gn7);
               grand_mean3(gen,nrp,ft1,ft2,ft3,ft4,ft5,ft6,ft7,ft8);
               free_ivector(nrn,0,gen);
               free_ivector(nrp,0,gen);
+              printf("FLAG VECTOR");
+              vector_free(&vector_quasi_ext);   
               free_fmatrix(mnv,0,gen,0,1);
               free_fmatrix(mnr,0,gen,0,1);
               free_fmatrix(myr,0,gen,0,1);
@@ -910,10 +920,12 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
       float **gn2,float **gn3,float **gn4,float **gn5,float **gn6,float **gn7,
       float **ec1,float **ec2,float **ec3,int *nrp,float **ft1,float **ft2,
       float **ft3,float **ft4,float **ft5,float **ft6,float **ft7,float **ft8,int rr,
-      void (*repro)(),void (*mean3)(),double b0, int safe_sites_bool, int demo_rescue_bool, int gen_rescue_pool, float sites_increase, float pop_size_interv, float prob_new_S_allele, float prob_new_allele, int interv_threshold, Vector *Stype, Vector *vector_N_alleles, 
+      void (*repro)(),void (*mean3)(),double b0, int safe_sites_bool, int demo_rescue_bool, int gen_rescue_pool,
+      float sites_increase, float pop_size_interv, float prob_new_S_allele, float prob_new_allele, int interv_threshold, 
+      Vector *Stype, Vector *vector_N_alleles, Vector *vector_quasi_ext,
       int fire_flag, float fire_prob, float fire_prob_death, float est_fire, int fire_postive_seeds)
   {
-    int g,i,plants,rep,veg,age,cnt=0, number_interv=0, rcnt_fake;
+    int g,i,plants,rep,veg,age,cnt=0, number_interv=0, rcnt_fake, update_quasi_prob = 0;
     //int pop_size_interv = 100, new_sloc = sloc + 10, new_nloc = nloc + 5;
     //float sites_increase = 0.2;
     //float prob_new_S_allele = 0.5, prob_new_allele = 0.5;
@@ -948,6 +960,11 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
               printf(" Genetic rescue: %d\n",gen_rescue_pool);
               number_interv=1;
 		    }
+		    // Filling vector to calculate quasi-extinction probability risk curve 
+		    if(plants < interv_threshold){
+				update_quasi_prob = vector_get(vector_quasi_ext,g) + 1;
+				vector_set(vector_quasi_ext,g, update_quasi_prob);
+			}
 		    //printf(" Genetic rescue: %d\n",gen_rescue_pool);
 		    //printf(" Demographic rescue: %d\n",demo_rescue_bool);
             //printf(" Spatial rescue: %d\n",safe_sites_bool);
@@ -1030,6 +1047,7 @@ void means2(int g,int plants,float **gn1,float **gn2,float **gn3,
     int xc,yc,i,j;
     float *si_gene,*heteros,**n_genes;
     int sloc = Stype->size;
+    printf("VECTOR MEANS2\n");
     int nloc = vector_N_alleles->size;
     n_genes = fmatrix(1,GENES-1,1,nloc);
     si_gene = fvector(1,sloc);
@@ -2963,13 +2981,13 @@ void nrerror(char error_text[])
 /* calculates means and standard errors for demographic data; prints to file fpw1 */
 
 void grand_mean1(int gen,float **mnv,float **mnr,float **myr,int *nrn,float **ec1,
-      float **ec2,float **ec3,int *nrp)
+      float **ec2,float **ec3,int *nrp, Vector *vector_quasi_ext)
   {
     int g;
     float se;
 
-    fprintf(fpw1,"GEN\\tNRUN\\tTVEG\\tERR1\\tTREP\\tERR2\\t\\AGE\\tERR3\\t");
-    fprintf(fpw1,"EMPTY\tERR4\tLREP\tERR5\tMATE\tERR6\n");
+    fprintf(fpw1,"GEN\tNRUN\tTVEG\tERR1\tTREP\tERR2\tAGE\tERR3\t");
+    fprintf(fpw1,"EMPTY\tERR4\tLREP\tERR5\tMATE\tERR6\tQUASI\n");
     for(g=0;g<=gen;g++)
       {
         fprintf(fpw1,"%d\t%d\t",g,nrn[g]);
@@ -2981,7 +2999,7 @@ void grand_mean1(int gen,float **mnv,float **mnr,float **myr,int *nrn,float **ec
             if(nrp[g]==0)
               fprintf(fpw1,".\t.\t.\t.\t.\t.\n");
             else if(nrp[g]==1)
-              fprintf(fpw1,"%.1f\t.\t%.1f\t.\t%.1f\t.\n",ec1[g][0],ec2[g][0],ec3[g][0]); 
+              fprintf(fpw1,"%.1f\t.\t%.1f\t.\t%.1f\t%3d\t\n",ec1[g][0],ec2[g][0],ec3[g][0],vector_get(vector_quasi_ext,g)); 
           }
         else
           {
@@ -3000,7 +3018,7 @@ void grand_mean1(int gen,float **mnv,float **mnr,float **myr,int *nrn,float **ec
             if(nrp[g]==0)
               fprintf(fpw1,".\t.\t.\t.\t.\t.\n");
             else if(nrp[g]==1)
-              fprintf(fpw1,"%.1f\t.\t%.1f\t.\t%.1f\t.\n",ec1[g][0],ec2[g][0],ec3[g][0]);
+              fprintf(fpw1,"%.1f\t.\t%.1f\t.\t%.1f\t%3d\t\n",ec1[g][0],ec2[g][0],ec3[g][0],vector_get(vector_quasi_ext,g)); 
             else
               {    
                 fprintf(fpw1,"%.1f\t",(ec1[g][0]/nrp[g]));    
@@ -3014,7 +3032,8 @@ void grand_mean1(int gen,float **mnv,float **mnr,float **myr,int *nrn,float **ec
                 fprintf(fpw1,"%.1f\t",(ec3[g][0]/nrp[g]));
                 ec3[g][0] *= ec3[g][0];
                 se=(sqrt(fabs((ec3[g][1]-(ec3[g][0]/nrp[g]))/(nrp[g]-1))))/sqrt(nrp[g]);
-                fprintf(fpw1,"%.3f\n",se);
+                fprintf(fpw1,"%.3f\t",se);
+                fprintf(fpw1,"%3d\n",vector_get(vector_quasi_ext,g));
               }  
           }
       }
