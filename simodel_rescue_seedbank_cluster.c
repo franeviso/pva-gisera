@@ -1047,7 +1047,6 @@ void means2(int g,int plants,float **gn1,float **gn2,float **gn3,
     int xc,yc,i,j;
     float *si_gene,*heteros,**n_genes;
     int sloc = Stype->size;
-    printf("VECTOR MEANS2\n");
     int nloc = vector_N_alleles->size;
     n_genes = fmatrix(1,GENES-1,1,nloc);
     si_gene = fvector(1,sloc);
@@ -2781,7 +2780,7 @@ void kill_plants(gsl_rng *r, double d)
 void new_plants(gsl_rng *r,float est)
   {
     int i,j,k,xc,yc,sn;
-    double rnum, seedbank_prob = 0.5;
+    double rnum, seedbank_prob = 0.5, mort_seed_seedbank_prob = 0.25;
 
     for(xc=0;xc<LEN;xc++)
       {
@@ -2847,9 +2846,9 @@ void new_plants(gsl_rng *r,float est)
                       }
                   }  
               }
-              // Seed bank seeds that are older than 3 years old die
+              // Seedbank seeds that are older than 10 years old die
               for(i=0;i<SDMAX;i++){
-				  if(pop[xc][yc].seedbank_age[i] > 3){
+				  if(pop[xc][yc].seedbank_age[i] > 10){
 					  if(pop[xc][yc].seedbank > 0){
 					      pop[xc][yc].seedbank -= 1;
 					      //printf("Seedbank reset");
@@ -2860,6 +2859,18 @@ void new_plants(gsl_rng *r,float est)
                                  pop[xc][yc].seedbankid[i][j][k] = 0;
 					  }
 					  
+				  }else{ //Seedbank seeds mortality filter
+					  if(mort_seed_seedbank_prob > gsl_rng_uniform(r)){
+					     if(pop[xc][yc].seedbank > 0){
+					          pop[xc][yc].seedbank -= 1;
+					      //printf("Seedbank reset");
+					     }
+					     pop[xc][yc].seedbank_age[i] = 0;
+					     for(j=0;j<=GENES;j++){
+                              for(k=0;k<ALL;k++)
+                                 pop[xc][yc].seedbankid[i][j][k] = 0;
+					      }
+					  }
 				  }
 			  }
           }
