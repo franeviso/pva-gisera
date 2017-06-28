@@ -65,12 +65,12 @@
 #define PNEW_S_ALLELE 0.2  /* Probability of new S alleles */ 
 #define PNEW_N_ALLELE 0.0  /* Probability of new neutral alleles */
 #define INT_THRESHOLD 50 /* Threshold of population size to intervene */
-#define FIRE 1           /* Presence of fire events */
+#define FIRE 0           /* Presence of fire events */
 #define FIRE_SERO 1           /* Positive effect of fire on seed germination */
 #define FIRE_PROB 0.5           /* Frequency of fire events */
 #define FIRE_PROB_DEATH 0.075     /* Death rate by fire events */
 #define FIRE_EST 0.075     /* Increased probability of seed establishment with fire  */              
-               
+#define SEEDBANK_MORT 0.1     /* Probability of seedbank seed mortality  */                
 
 /*                         FUNCTION PROTOTYPES                           */
 
@@ -115,7 +115,7 @@ void means4(int,int,int,float **,float **,float **);
 void means5(int,int,float **,float **,float **);
 void menu(void);
 void n_dads(int,int,int,int,int *,int *,float *);
-void new_plants(gsl_rng *,float);
+void new_plants(gsl_rng *,float, float);
 void nrerror(char []);     
 void parms1(int *,int *,int *,int *,int *,float *,float *,float *,int *, int *, int *, int *);
 void parms2(double *,int *,int *,int *,double *,float *,int *,int *, float *, int *, int *, float *,float *);
@@ -140,7 +140,7 @@ void safe_sites(gsl_rng *r, float);
 void SI_model(int,int,double,int,int,float,float **,float **,float **,int *,int,
       int,int,float **,float **,float **,float **,float **,float **,float **,
       float **,float **,float **,int *,float **,float **,float **,float **,
-      float **,float **,float **,float **,int,void (*)(),void (*)(),double,int, int, int, float, float, float, float, int, Vector *, Vector *,Vector *, int, float, float, float, int);
+      float **,float **,float **,float **,int,void (*)(),void (*)(),double,int, int, int, float, float, float, float, int, Vector *, Vector *,Vector *, int, float, float, float, int, float);
       
 int **imatrix(long int,long int,long int,long int);
 int *ivector(long int,long int);
@@ -194,8 +194,8 @@ int main(int argc, char *argv[])
     float **mnv,**mnr,**myr,**gn1,**gn2,**gn3,**gn4,**gn5,**gn6,**gn7;
     float **ft1,**ft2,**ft3,**ft4,**ft5,**ft6,**ft7,**ft8,lm=LM,lv=LV;
     double d=D,b0=B0;
-    int safe_sites_bool = SAFE_SITES_BOOL, demo_rescue_bool = DEMO_RESCUE_BOOL, gen_rescue_pool = GEN_RESCUE_POOL, pop_size_interv = POP_SIZE_INT, interv_threshold = INT_THRESHOLD, fire_flag = FIRE;
-    float sites_increase = SITES_INCREASE, prob_new_S_allele = PNEW_S_ALLELE, prob_new_allele = PNEW_N_ALLELE, fire_prob = FIRE_PROB, fire_prob_death = FIRE_PROB_DEATH, est_fire = FIRE_EST, fire_postive_seeds = FIRE_SERO;
+    int safe_sites_bool = SAFE_SITES_BOOL, demo_rescue_bool = DEMO_RESCUE_BOOL, gen_rescue_pool = GEN_RESCUE_POOL, pop_size_interv = POP_SIZE_INT, interv_threshold = INT_THRESHOLD, fire_flag = FIRE, fire_postive_seeds = FIRE_SERO;
+    float sites_increase = SITES_INCREASE, prob_new_S_allele = PNEW_S_ALLELE, prob_new_allele = PNEW_N_ALLELE, fire_prob = FIRE_PROB, fire_prob_death = FIRE_PROB_DEATH, est_fire = FIRE_EST, seedbank_mort = SEEDBANK_MORT;
     // declare and initialize a new vector
     Vector vector_S_alleles;
     Vector vector_N_alleles;
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     
     
 
-    while((option = getopt(argc, argv,"r:g:o:n:s:f:m:v:l:xyzk:p:t:a:b:c:d:e:h:i:u:")) != -1)
+    while((option = getopt(argc, argv,"r:g:o:n:s:f:m:v:l:xyzk:p:t:a:b:c:d:j:F:A:B:C:D:e:h:i:u:")) != -1)
       {
 		 switch (option) {
              case 'r' : runs = atoi(optarg);
@@ -244,6 +244,18 @@ int main(int argc, char *argv[])
                  break;
              case 'd' : sitype = atoi(optarg);
                  break;
+             case 'j': fire_flag = atoi(optarg);
+                 break;
+             case 'F': fire_prob = atof(optarg);
+                 break;
+             case 'A': fire_prob_death = atof(optarg);
+                 break;
+             case 'B': fire_postive_seeds = atoi(optarg);
+                 break;
+             case 'C': est_fire = atof(optarg);
+                 break;
+             case 'D' : seedbank_mort = atof(optarg);
+                 break;                                                                                                         
              case 'e' : fout11 = optarg;
                  break;
              case 'h' : fout22 = optarg;
@@ -337,7 +349,7 @@ int main(int argc, char *argv[])
                   printf("Current Run: %d\n",rr+1);
                   SI_model(gen,minr,d,pdist,sdist,est,mnv,mnr,myr,nrn,sloc,nloc,lint,gn1,
                            gn2,gn3,gn4,gn5,gn6,gn7,ec1,ec2,ec3,nrp,ft1,ft2,ft3,ft4,ft5,
-                           ft6,ft7,ft8,rr,repro,mean3,b0,safe_sites_bool,demo_rescue_bool,gen_rescue_pool,sites_increase,pop_size_interv,prob_new_S_allele,prob_new_allele,interv_threshold,&vector_S_alleles,&vector_N_alleles, &vector_quasi_ext, fire_flag, fire_prob, fire_prob_death, est_fire, fire_postive_seeds);
+                           ft6,ft7,ft8,rr,repro,mean3,b0,safe_sites_bool,demo_rescue_bool,gen_rescue_pool,sites_increase,pop_size_interv,prob_new_S_allele,prob_new_allele,interv_threshold,&vector_S_alleles,&vector_N_alleles, &vector_quasi_ext, fire_flag, fire_prob, fire_prob_death, est_fire, fire_postive_seeds, seedbank_mort);
                   /// Add free_vector possibly to free memory of vector_S_alleles
                   vector_free(&vector_S_alleles);
                   vector_free(&vector_N_alleles);                                               
@@ -923,7 +935,7 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
       void (*repro)(),void (*mean3)(),double b0, int safe_sites_bool, int demo_rescue_bool, int gen_rescue_pool,
       float sites_increase, float pop_size_interv, float prob_new_S_allele, float prob_new_allele, int interv_threshold, 
       Vector *Stype, Vector *vector_N_alleles, Vector *vector_quasi_ext,
-      int fire_flag, float fire_prob, float fire_prob_death, float est_fire, int fire_postive_seeds)
+      int fire_flag, float fire_prob, float fire_prob_death, float est_fire, int fire_postive_seeds, float seedbank_mort)
   {
     int g,i,plants,rep,veg,age,cnt=0, number_interv=0, rcnt_fake, update_quasi_prob = 0;
     //int pop_size_interv = 100, new_sloc = sloc + 10, new_nloc = nloc + 5;
@@ -973,14 +985,14 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 				if(fire_prob >  gsl_rng_uniform(r)){ /// prob_fire_freq: frequency of fire events along one simulation 
 					kill_plants(r,fire_prob_death);   /// fire_death_prob: increased (compared to "d") probability of death by a fire event
 					printf("             ----->   FIRE!\n");
-					if(fire_postive_seeds == 1)   new_plants(r,est_fire); /// Add positive effect of fire in seed germination probability when species is serotinous
-					else  new_plants(r,est); /// No serotinous
+					if(fire_postive_seeds == 1)   new_plants(r,est_fire, seedbank_mort); /// Add positive effect of fire in seed germination probability when species is serotinous
+					else  new_plants(r,est,seedbank_mort); /// No serotinous
 				}else{
 					kill_plants(r,d);
 				}
 			}else{ /// NO FIRE
 				kill_plants(r,d);
-				new_plants(r,est);
+				new_plants(r,est,seedbank_mort);
 			}
             
             printf(" FLAG 2 \n"); 
@@ -1078,13 +1090,13 @@ void means2(int g,int plants,float **gn1,float **gn2,float **gn3,
           }
       }
     gene_data(g,plants,nloc,sloc,gn1,gn2,gn3,gn4,gn5,gn6,gn7,n_genes,si_gene,heteros);
-    //printf(" Flag means2 \n"); 
+    printf(" Flag means2 \n"); 
     free_fmatrix(n_genes,1,GENES-1,1,nloc);
-    //printf(" Flag means3 \n"); 
+    printf(" Flag means3 \n"); 
     free_fvector(si_gene,1,sloc);
-    //printf(" Flag means4 \n");
+    printf(" Flag means4 \n");
     free_fvector(heteros,1,GENES-1);
-    //printf(" Flag means5 \n");  
+    printf(" Flag means5 \n");  
     return;
   }        
 
@@ -2777,10 +2789,10 @@ void kill_plants(gsl_rng *r, double d)
 /* adds new seedlings at time t+1 to the population (after adult mortality) */
 /* Function to add probability of germination from seed bank */
 
-void new_plants(gsl_rng *r,float est)
+void new_plants(gsl_rng *r,float est, float  mort_seed_seedbank_prob)
   {
     int i,j,k,xc,yc,sn;
-    double rnum, seedbank_prob = 0.5, mort_seed_seedbank_prob = 0.25;
+    double rnum, seedbank_prob = 0.5;
 
     for(xc=0;xc<LEN;xc++)
       {
@@ -3205,6 +3217,8 @@ void plant_data(int g,int sloc,int nloc)
                       {
                         id_val(xc,yc,i,&id,sloc,nloc);
                         fprintf(fpw4," %3d %3d %3d",id,pop[xc][yc].gtype[i][0],
+                                pop[xc][yc].gtype[i][1]);
+                        printf(" %3d %3d %3d\n",id,pop[xc][yc].gtype[i][0],
                                 pop[xc][yc].gtype[i][1]); 
                       }
                   }
