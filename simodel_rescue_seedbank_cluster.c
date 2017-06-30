@@ -591,7 +591,9 @@ void init_values(void)
                   {
                     for(k=0;k<ALL;k++)
                       pop[xc][yc].stype[i][j][k] = 0;
+                      pop[xc][yc].seedbankid[i][j][k] = 0;
                   }
+                  pop[xc][yc].seedbank_age[SDMAX]= 0;
               }  
           }
       }
@@ -630,14 +632,13 @@ void safe_sites(gsl_rng *r, float sites)
 
 /* Check if there is a new S allele (and neutral allele)*/
 
-bool check_new_Sallele(int S_allele, Vector *vector){
-	bool var;
-	int max = vector->size; 
-	for(int index=0;index < max; ++index){
-	    if(S_allele == vector_get(vector, index))
-	       var = true;
-	    else
-	       var = false; 
+int check_new_Sallele(int S_allele, Vector *vector){
+	int var, max = vector->size; 
+	for(int index=0;index < max; index++){
+	    if(S_allele == vector_get(vector, index)){
+			var = 0;
+			break;
+	    }else  var = 1; 
     }
 	return var;
 }
@@ -650,8 +651,7 @@ bool check_new_Sallele(int S_allele, Vector *vector){
 
 void init_plants(gsl_rng *r, int inum,int nloc,int sloc,float lm,float lv, Vector *vector_S_alleles, Vector *vector_N_alleles)
   {
-	bool check;
-    int i,j,xc,yc,al,cnt=0;
+    int is_new_S_allele,i,j,xc,yc,al,cnt=0;
     while(cnt<inum)
       {
         xc = gsl_rng_uniform_int(r,LEN-1);//g05dyc(0,LEN-1);
@@ -663,20 +663,24 @@ void init_plants(gsl_rng *r, int inum,int nloc,int sloc,float lm,float lv, Vecto
                 if(i==0)           /* SI locus - must be heterozygous */
                   {
                     al = gsl_rng_uniform_int(r,sloc);//g05dyc(1,sloc);
+                    printf("---------------------------------------------->   Try allele a1:%d \n",al);
                     pop[xc][yc].gtype[i][0] = al;
                     if(cnt == 0){
                        vector_append(vector_S_alleles,al);
                     }else{
-					   check = check_new_Sallele(al, vector_S_alleles);
-                       if(check == false)
+					   is_new_S_allele = check_new_Sallele(al, vector_S_alleles);
+                       if(is_new_S_allele != 0)  //->> Change made
                           vector_append(vector_S_alleles,al);
 					}
-                       
-                    while(al==pop[xc][yc].gtype[i][0])
+                    al = gsl_rng_uniform_int(r,sloc);
+                    printf("---------------------------------------------->   Try allele a2:%d \n",al);   
+                    while(al==pop[xc][yc].gtype[i][0]){
                        al = gsl_rng_uniform_int(r,sloc);//g05dyc(1,sloc);
+                       printf("---------------------------------------------->   Try allele a22:%d \n",al);   
+				   }
                     pop[xc][yc].gtype[i][1] = al;
-                    check = check_new_Sallele(al, vector_S_alleles);
-                    if(check == false)
+                    is_new_S_allele = check_new_Sallele(al, vector_S_alleles);
+                    if(is_new_S_allele != 0) //->> Change made
                        vector_append(vector_S_alleles,al);   
                   }
                 else if(i>0)       /* Neutral loci */
@@ -685,8 +689,8 @@ void init_plants(gsl_rng *r, int inum,int nloc,int sloc,float lm,float lv, Vecto
                       {
                         al = gsl_rng_uniform_int(r,nloc);//g05dyc(1,nloc);
                         pop[xc][yc].gtype[i][j] = al;
-                        check = check_new_Sallele(al, vector_N_alleles);
-                        if(check == false)
+                        is_new_S_allele = check_new_Sallele(al, vector_N_alleles);
+                        if(is_new_S_allele != 0) //->> Change made
                            vector_append(vector_N_alleles,al);
                       }
                   }
@@ -695,6 +699,7 @@ void init_plants(gsl_rng *r, int inum,int nloc,int sloc,float lm,float lv, Vecto
             cnt += 1;
           }
       }
+
     //gsl_rng_free (r);      
     return;
   }
@@ -787,9 +792,8 @@ void demographic_rescue(gsl_rng *r, int inum, int minr)
 
 void genetic_rescue(gsl_rng *r, int inum, int minr, int sloc, int nloc, float prob_new_S_allele, float prob_new_allele, Vector *Stype, Vector *vector_N_alleles)
   {
-    int i,xc,xc_dad,yc,yc_dad,xc_mom,yc_mom,al,al2,cnt=0,count,update_sloc=sloc;
+    int i,xc,xc_dad,yc,yc_dad,xc_mom,yc_mom,al,al2,cnt=0,count,update_sloc=sloc,check;
     int coords_mom[2] = {}, coords_dad[2] = {};
-    bool check;
     while(cnt<inum)
       {
         xc = gsl_rng_uniform_int(r,LEN-1);//g05dyc(0,LEN-1);
@@ -855,10 +859,10 @@ void genetic_rescue(gsl_rng *r, int inum, int minr, int sloc, int nloc, float pr
                     //printf(" S allele 1: %d\n",pop[xc][yc].gtype[i][0]);
                     //printf(" S allele 2: %d\n",pop[xc][yc].gtype[i][1]);
                     check = check_new_Sallele(pop[xc][yc].gtype[i][0], Stype);
-                    if(check == false)
+                    if(check != 0)
                        vector_append(Stype,pop[xc][yc].gtype[i][0]);
                     check = check_new_Sallele(pop[xc][yc].gtype[i][1], Stype);
-                    if(check == false)
+                    if(check != 0)
                        vector_append(Stype,pop[xc][yc].gtype[i][1]);                                          
                     //if(pop[xc][yc].gtype[i][0] > 100 || pop[xc][yc].gtype[i][1] > 100){
                        //printf(" S allele 1: %d\n",pop[xc][yc].gtype[i][0]);
@@ -882,12 +886,12 @@ void genetic_rescue(gsl_rng *r, int inum, int minr, int sloc, int nloc, float pr
 					  }else{
                           pop[xc][yc].gtype[i][1] = pop[coords_mom[0]][coords_mom[1]].gtype[i][1];
 					  }
-					                      check = check_new_Sallele(pop[xc][yc].gtype[i][0], Stype);
+					  check = check_new_Sallele(pop[xc][yc].gtype[i][0], Stype);
 					  // Check if there are new neutral alleles, if yes add to the vector of neutral alleles                    
-                      if(check == false)
+                      if(check != 0)
                          vector_append(vector_N_alleles,pop[xc][yc].gtype[i][0]);
                       check = check_new_Sallele(pop[xc][yc].gtype[i][1], vector_N_alleles);
-                      if(check == false)
+                      if(check != 0)
                          vector_append(vector_N_alleles,pop[xc][yc].gtype[i][1]); 
                   }
               }
@@ -1061,6 +1065,7 @@ void means2(int g,int plants,float **gn1,float **gn2,float **gn3,
     int sloc = Stype->size;
     int nloc = vector_N_alleles->size;
     n_genes = fmatrix(1,GENES-1,1,nloc);
+    printf(" Sloc size of S locus (alleles) %d \n", sloc); 
     si_gene = fvector(1,sloc);
     heteros = fvector(1,GENES-1);
     for(i=1;i<GENES;i++)
@@ -1084,6 +1089,7 @@ void means2(int g,int plants,float **gn1,float **gn2,float **gn3,
                     n_genes[i][pop[xc][yc].gtype[i][0]] += 1.0;
                     n_genes[i][pop[xc][yc].gtype[i][1]] += 1.0;
                   }
+                //printf("%d   %d\n",pop[xc][yc].gtype[0][0],pop[xc][yc].gtype[0][1]);          
                 si_gene[pop[xc][yc].gtype[0][0]] += 1.0;
                 si_gene[pop[xc][yc].gtype[0][1]] += 1.0;
               }
@@ -2821,6 +2827,7 @@ void new_plants(gsl_rng *r,float est, float  mort_seed_seedbank_prob)
                               {
                                  for(j=0;j<ALL;j++)
                                     pop[xc][yc].gtype[i][j] = pop[xc][yc].seedbankid[sn][i][j];
+                                    printf("Seedbank seed S allele 1: %d  - S allele 2: %d /n",pop[xc][yc].seedbankid[sn][0][0],pop[xc][yc].seedbankid[sn][0][1]);
                               }
                               pop[xc][yc].mom = pop[xc][yc].seedbankid[sn][GENES][0];
                               pop[xc][yc].dad = pop[xc][yc].seedbankid[sn][GENES][1]; 
@@ -2875,7 +2882,7 @@ void new_plants(gsl_rng *r,float est, float  mort_seed_seedbank_prob)
 					  if(mort_seed_seedbank_prob > gsl_rng_uniform(r)){
 					     if(pop[xc][yc].seedbank > 0){
 					          pop[xc][yc].seedbank -= 1;
-					      //printf("Seedbank reset");
+					          printf("Seedbank reset");
 					     }
 					     pop[xc][yc].seedbank_age[i] = 0;
 					     for(j=0;j<=GENES;j++){
@@ -3218,8 +3225,8 @@ void plant_data(int g,int sloc,int nloc)
                         id_val(xc,yc,i,&id,sloc,nloc);
                         fprintf(fpw4," %3d %3d %3d",id,pop[xc][yc].gtype[i][0],
                                 pop[xc][yc].gtype[i][1]);
-                        printf(" %3d %3d %3d\n",id,pop[xc][yc].gtype[i][0],
-                                pop[xc][yc].gtype[i][1]); 
+                        //printf(" %3d %3d %3d\n",id,pop[xc][yc].gtype[i][0],
+                                //pop[xc][yc].gtype[i][1]); 
                       }
                   }
                 else if(pop[xc][yc].age==0)           
