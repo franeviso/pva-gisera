@@ -98,6 +98,7 @@ void init_arrays(int,float **,float **,float **,int *,float **,float **,float **
 void init_plants(gsl_rng *,int,int,int,float,float, Vector *,Vector *);
 void init_values(void);
 void kill_plants(gsl_rng *,double);
+void kill_plants_agedep(gsl_rng *,double,double);
 void make_ovule(gsl_rng *,int,int,int *,int *);
 void make_pollen_pool_r(int,int,int,int **,float *,int,int);
 void make_pollen_pool_s(int,int,int,int **,float *,int,int);
@@ -994,7 +995,7 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
             /// FIRE
             if(fire_flag == 1){ /// Flags if there will be fire events in the simulations or not at all
 				if(fire_prob >  gsl_rng_uniform(r)){ /// prob_fire_freq: frequency of fire events along one simulation 
-					kill_plants_agedep(r,fire_prob_death);   /// fire_death_prob: increased (compared to "d") probability of death by a fire event
+					kill_plants_agedep(r,lambda,fire_prob_death + d);   /// fire_death_prob: increased (compared to "d") probability of death by a fire event
 					printf("             ----->   FIRE!\n");
 					if(fire_postive_seeds == 1){
 						seedbank_mortality(r,seedbank_mort);
@@ -1006,10 +1007,10 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 						
 					}
 				}else{
-					kill_plants_agedep(r,d);
+					kill_plants_agedep(r,lambda,d);
 				}
 			}else{ /// NO FIRE
-				kill_plants_agedep(r,d);
+				kill_plants_agedep(r,lambda,d);
 				seedbank_mortality(r,seedbank_mort);
 				new_plants(r,est);
 				
@@ -2810,7 +2811,7 @@ void kill_plants(gsl_rng *r, double d)
   
 /* determines mortality for adult plants assuming age-dependent death rate and senescence */
 
-void kill_plants_agedep(gsl_rng *r, double lambda)
+void kill_plants_agedep(gsl_rng *r, double lambda, double d)
   {
     int i,j,xc,yc;
     double death_age_prob;
@@ -2821,7 +2822,7 @@ void kill_plants_agedep(gsl_rng *r, double lambda)
           {
             if(pop[xc][yc].age>0 && pop[xc][yc].age < 30)
               {
-				death_age_prob = lambda*exp(-lambda*pop[xc][yc].age);
+				death_age_prob = lambda*exp(-lambda*pop[xc][yc].age) + d;
 				if(death_age_prob < 0.005) death_age_prob = 0.005;
 				//printf("Age-dependent mortality rate: %.2f \n", death_age_prob);
 				//printf("D (lambda): %.2f \n", lambda);
