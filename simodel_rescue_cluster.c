@@ -602,14 +602,13 @@ void safe_sites(gsl_rng *r, float sites)
 
 /* Check if there is a new S allele (and neutral allele)*/
 
-bool check_new_Sallele(int S_allele, Vector *vector){
-	bool var;
-	int max = vector->size; 
-	for(int index=0;index < max; ++index){
-	    if(S_allele == vector_get(vector, index))
-	       var = true;
-	    else
-	       var = false; 
+int check_new_Sallele(int S_allele, Vector *vector){
+	int var, max = vector->size; 
+	for(int index=0;index < max; index++){
+	    if(S_allele == vector_get(vector, index)){
+			var = 0;
+			break;
+	    }else  var = 1; 
     }
 	return var;
 }
@@ -622,8 +621,7 @@ bool check_new_Sallele(int S_allele, Vector *vector){
 
 void init_plants(gsl_rng *r, int inum,int nloc,int sloc,float lm,float lv, Vector *vector_S_alleles, Vector *vector_N_alleles)
   {
-	bool check;
-    int i,j,xc,yc,al,cnt=0;
+    int is_new_S_allele,i,j,xc,yc,al,cnt=0;
     while(cnt<inum)
       {
         xc = gsl_rng_uniform_int(r,LEN-1);//g05dyc(0,LEN-1);
@@ -639,16 +637,17 @@ void init_plants(gsl_rng *r, int inum,int nloc,int sloc,float lm,float lv, Vecto
                     if(cnt == 0){
                        vector_append(vector_S_alleles,al);
                     }else{
-					   check = check_new_Sallele(al, vector_S_alleles);
-                       if(check == false)
+					   is_new_S_allele = check_new_Sallele(al, vector_S_alleles);
+                       if(is_new_S_allele != 0)  //->> Change made
                           vector_append(vector_S_alleles,al);
 					}
-                       
-                    while(al==pop[xc][yc].gtype[i][0])
-                       al = gsl_rng_uniform_int(r,sloc);//g05dyc(1,sloc);
+                    al = gsl_rng_uniform_int(r,sloc);  
+                    while(al==pop[xc][yc].gtype[i][0]){
+                       al = gsl_rng_uniform_int(r,sloc);//g05dyc(1,sloc); 
+				   }
                     pop[xc][yc].gtype[i][1] = al;
-                    check = check_new_Sallele(al, vector_S_alleles);
-                    if(check == false)
+                    is_new_S_allele = check_new_Sallele(al, vector_S_alleles);
+                    if(is_new_S_allele != 0) //->> Change made
                        vector_append(vector_S_alleles,al);   
                   }
                 else if(i>0)       /* Neutral loci */
@@ -657,8 +656,8 @@ void init_plants(gsl_rng *r, int inum,int nloc,int sloc,float lm,float lv, Vecto
                       {
                         al = gsl_rng_uniform_int(r,nloc);//g05dyc(1,nloc);
                         pop[xc][yc].gtype[i][j] = al;
-                        check = check_new_Sallele(al, vector_N_alleles);
-                        if(check == false)
+                        is_new_S_allele = check_new_Sallele(al, vector_N_alleles);
+                        if(is_new_S_allele != 0) //->> Change made
                            vector_append(vector_N_alleles,al);
                       }
                   }
@@ -667,6 +666,7 @@ void init_plants(gsl_rng *r, int inum,int nloc,int sloc,float lm,float lv, Vecto
             cnt += 1;
           }
       }
+
     //gsl_rng_free (r);      
     return;
   }

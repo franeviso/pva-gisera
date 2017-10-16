@@ -994,7 +994,7 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
             /// FIRE
             if(fire_flag == 1){ /// Flags if there will be fire events in the simulations or not at all
 				if(fire_prob >  gsl_rng_uniform(r)){ /// prob_fire_freq: frequency of fire events along one simulation 
-					kill_plants(r,fire_prob_death);   /// fire_death_prob: increased (compared to "d") probability of death by a fire event
+					kill_plants_agedep(r,fire_prob_death);   /// fire_death_prob: increased (compared to "d") probability of death by a fire event
 					printf("             ----->   FIRE!\n");
 					if(fire_postive_seeds == 1){
 						seedbank_mortality(r,seedbank_mort);
@@ -1006,10 +1006,10 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 						
 					}
 				}else{
-					kill_plants(r,d);
+					kill_plants_agedep(r,d);
 				}
 			}else{ /// NO FIRE
-				kill_plants(r,d);
+				kill_plants_agedep(r,d);
 				seedbank_mortality(r,seedbank_mort);
 				new_plants(r,est);
 				
@@ -2808,6 +2808,60 @@ void kill_plants(gsl_rng *r, double d)
     return;
   }  
   
+/* determines mortality for adult plants assuming age-dependent death rate and senescence */
+
+void kill_plants_agedep(gsl_rng *r, double lambda)
+  {
+    int i,j,xc,yc;
+    double death_age_prob;
+
+    for(xc=0;xc<LEN;xc++)
+      {
+        for(yc=0;yc<LEN;yc++)
+          {
+            if(pop[xc][yc].age>0 && pop[xc][yc].age < 30)
+              {
+				death_age_prob = lambda*exp(-lambda*pop[xc][yc].age);
+				if(death_age_prob < 0.005) death_age_prob = 0.005;
+				//printf("Age-dependent mortality rate: %.2f \n", death_age_prob);
+				//printf("D (lambda): %.2f \n", lambda);
+                if((gsl_rng_uniform(r))<=death_age_prob) //g05cac()
+                  {
+                    pop[xc][yc].age = 0;
+                    pop[xc][yc].mom = 0;
+                    pop[xc][yc].dad = 0;          
+                    for(i=0;i<GENES;i++)
+                      {
+                        for(j=0;j<ALL;j++)
+                          pop[xc][yc].gtype[i][j] = 0;
+                      }
+                  }
+                else if(gsl_rng_uniform(r)>death_age_prob) //rnum>d
+                  pop[xc][yc].age += 1;
+
+				}
+			 else(pop[xc][yc].age > 20)
+			   {
+				 if((gsl_rng_uniform(r))< 0.9) //g05cac()
+                  {
+                    pop[xc][yc].age = 0;
+                    pop[xc][yc].mom = 0;
+                    pop[xc][yc].dad = 0;          
+                    for(i=0;i<GENES;i++)
+                      {
+                        for(j=0;j<ALL;j++)
+                          pop[xc][yc].gtype[i][j] = 0;
+                      }
+                  }
+				   
+			   }	
+                      
+              }
+          }
+      }
+    //gsl_rng_free (r);     
+    return;
+  } 
   
 
 
