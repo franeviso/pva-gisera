@@ -3,7 +3,7 @@
 
 //* Compilation lines:
 
-/// gcc -std=c99 -I/usr/include/gsl -Wall -o simo simodel_rescue.c vector.c -lgsl -lgslcblas -lncurses -lm
+/// gcc -std=c99 -I/usr/include/gsl -Wall -o acacia simodel_rescue_seedbank.c vector.c -lgsl -lgslcblas -lncurses -lm
 // gcc -std=c99 -I/usr/include/gsl -Wall -o simo_cluster simodel_rescue_cluster.c vector.c -lgsl -lgslcblas -ltinfo -lncurses -lm
 // ./rescue -r 1 -g 500 -o 250 -n 3 -s 10 -f 0.25 -m 1.0 -v 0.0 -l 100 -x -z -k 0.2 -p 10 -t 50 -a 0.2 -b 0.1 -c 2 -d 2 -e demo -h gen -i fit -u indiv
 // ./simo_cluster -r 100 -g 500 -o 250 -n 3 -s 10 -f 0.25 -m 1.0 -v 0.0 -l 100 -p 10 -t 50 -a 0.2 -b 0.1 -c 2 -d 2 -e demo_control.dat -h gen_control.dat -i fit_control.dat -u indiv_control.dat 
@@ -42,7 +42,7 @@
 #define NLOC 3        /* number of alleles per neutral locus             */
 #define SLOC 10       /* number of alleles per SI locus                  */
 #define SITES 0.25    /* default fraction of safe sites                  */
-#define LM 1.0        /* mean of lognormal distribution of ages          */
+#define LM 10.0        /* mean of lognormal distribution of ages          */
 #define LV 0.0        /* variance of lognormal distribution of ages      */
 
 /*               WITHIN POPULATION DYNAMICS PARAMETERS                   */
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
     
     
 
-    while((option = getopt(argc, argv,"r:g:o:n:s:f:m:v:l:xyzk:p:t:a:b:c:d:j:F:A:B:C:D:e:h:i:u:")) != -1)
+    while((option = getopt(argc, argv,"r:g:o:n:s:f:m:v:l:L:X:xyzk:p:t:a:b:c:d:j:F:A:B:C:D:e:h:i:u:")) != -1)
       {
 		 switch (option) {
              case 'r' : runs = atoi(optarg);
@@ -227,6 +227,10 @@ int main(int argc, char *argv[])
                  break;
              case 'l' : lint = atoi(optarg);
                  break;
+             case 'L' : b0 = atof(optarg);
+                 break;                 
+             case 'X' : d = atof(optarg);
+                 break;                 
              case 'x' : safe_sites_bool = 1;
                  break;
              case 'y' : demo_rescue_bool = 1; 
@@ -953,19 +957,20 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
     //int pop_size_interv = 100, new_sloc = sloc + 10, new_nloc = nloc + 5;
     //float sites_increase = 0.2;
     //float prob_new_S_allele = 0.5, prob_new_allele = 0.5;
+    double lambda = 0.2;
     for(g=0;g<=gen;g++)
       {
 		//printf(" FLAG 4 \n");  
         if((plants=nplants(&veg,&rep,&age,minr))>1)
           {
             means1(g,mnv,mnr,myr,veg,rep,age);
-            printf(" FLAG 5 \n"); 
+            //printf(" FLAG 5 \n"); 
             means2(g,plants,gn1,gn2,gn3,gn4,gn5,gn6,gn7,Stype,vector_N_alleles);//means2(g,plants,new_sloc,new_nloc,gn1,gn2,gn3,gn4,gn5,gn6,gn7);
-            printf(" FLAG 6 \n"); 
+            //printf(" FLAG 6 \n"); 
             (*mean3)(g,rep,minr,pdist,sdist,ec1,ec2,ec3,nrp);
-            printf(" FLAG 7 \n"); 
+            //printf(" FLAG 7 \n"); 
             (*repro)(g,rep,minr,pdist,sdist,ft1,ft2,b0,d);
-            printf(" FLAG 8 \n");    
+            //printf(" FLAG 8 \n");    
             means4(g,rep,minr,ft3,ft4,ft5);
             if(cnt==0 && rr==0)
               plant_data(g,sloc,nloc);
@@ -991,15 +996,16 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 			}
 		    //printf(" Genetic rescue: %d\n",gen_rescue_pool);
 		    //printf(" Demographic rescue: %d\n",demo_rescue_bool);
-            printf(" Spatial rescue: %d\n",safe_sites_bool);
+            //printf(" Spatial rescue: %d\n",safe_sites_bool);
             /// FIRE
             if(fire_flag == 1){ /// Flags if there will be fire events in the simulations or not at all
 				if(fire_prob >  gsl_rng_uniform(r)){ /// prob_fire_freq: frequency of fire events along one simulation 
 					kill_plants_agedep(r,lambda,fire_prob_death + d);   /// fire_death_prob: increased (compared to "d") probability of death by a fire event
+					//kill_plants(r,fire_prob_death);
 					printf("             ----->   FIRE!\n");
 					if(fire_postive_seeds == 1){
 						seedbank_mortality(r,seedbank_mort);
-						new_plants(r,est_fire); /// Add positive effect of fire in seed germination probability when species is serotinous
+						new_plants(r,est+est_fire); /// Add positive effect of fire in seed germination probability when species is serotinous
 						
 					}else{
 						seedbank_mortality(r,seedbank_mort);
@@ -1008,17 +1014,19 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 					}
 				}else{
 					kill_plants_agedep(r,lambda,d);
+					//kill_plants(r,d);
 				}
 			}else{ /// NO FIRE
 				kill_plants_agedep(r,lambda,d);
+				//kill_plants(r,d);
 				seedbank_mortality(r,seedbank_mort);
 				new_plants(r,est);
-				
+
 			}
             
-            printf(" FLAG 2 \n"); 
+            //printf(" FLAG 2 \n"); 
             means5(g,rep,ft6,ft7,ft8);
-            printf(" FLAG 3 \n");
+            //printf(" FLAG 3 \n");
           } 
         else break;
       }
@@ -1082,7 +1090,7 @@ void means2(int g,int plants,float **gn1,float **gn2,float **gn3,
     int sloc = Stype->size;
     int nloc = vector_N_alleles->size;
     n_genes = fmatrix(1,GENES-1,1,nloc);
-    printf(" Sloc size of S locus (alleles) %d \n", sloc); 
+    //printf(" Sloc size of S locus (alleles) %d \n", sloc); 
     si_gene = fvector(1,sloc);
     heteros = fvector(1,GENES-1);
     for(i=1;i<GENES;i++)
@@ -1113,13 +1121,13 @@ void means2(int g,int plants,float **gn1,float **gn2,float **gn3,
           }
       }
     gene_data(g,plants,nloc,sloc,gn1,gn2,gn3,gn4,gn5,gn6,gn7,n_genes,si_gene,heteros);
-    printf(" Flag means2 \n"); 
+    //printf(" Flag means2 \n"); 
     free_fmatrix(n_genes,1,GENES-1,1,nloc);
-    printf(" Flag means3 \n"); 
+    //printf(" Flag means3 \n"); 
     free_fvector(si_gene,1,sloc);
-    printf(" Flag means4 \n");
+    //printf(" Flag means4 \n");
     free_fvector(heteros,1,GENES-1);
-    printf(" Flag means5 \n");  
+    //printf(" Flag means5 \n");  
     return;
   }        
 
@@ -2820,10 +2828,10 @@ void kill_plants_agedep(gsl_rng *r, double lambda, double d)
       {
         for(yc=0;yc<LEN;yc++)
           {
-            if(pop[xc][yc].age>0 && pop[xc][yc].age < 30)
+            if(pop[xc][yc].age>0 && pop[xc][yc].age < 20)
               {
 				death_age_prob = lambda*exp(-lambda*pop[xc][yc].age) + d;
-				if(death_age_prob < 0.005) death_age_prob = 0.005;
+				//if(death_age_prob < 0.005) death_age_prob = 0.005;
 				//printf("Age-dependent mortality rate: %.2f \n", death_age_prob);
 				//printf("D (lambda): %.2f \n", lambda);
                 if((gsl_rng_uniform(r))<=death_age_prob) //g05cac()
@@ -2841,9 +2849,9 @@ void kill_plants_agedep(gsl_rng *r, double lambda, double d)
                   pop[xc][yc].age += 1;
 
 				}
-			 else(pop[xc][yc].age > 20)
+			 else if(pop[xc][yc].age > 20)
 			   {
-				 if((gsl_rng_uniform(r))< 0.9) //g05cac()
+				 if(gsl_rng_uniform(r)< 0.9) //g05cac()
                   {
                     pop[xc][yc].age = 0;
                     pop[xc][yc].mom = 0;
@@ -2857,7 +2865,6 @@ void kill_plants_agedep(gsl_rng *r, double lambda, double d)
 				   
 			   }	
                       
-              }
           }
       }
     //gsl_rng_free (r);     
@@ -2916,7 +2923,7 @@ void new_plants(gsl_rng *r,float est)
                  }else{
 					// IF NO seed germinates then they become part of the seedbank, 
 
-					/*printf("No seed germination - seeds go to bank \n");*/
+					//printf("No seed germination - seeds go to bank \n");
 					
 					min_value = (pop[xc][yc].sds) < (tempvec.size) ? (pop[xc][yc].sds):(tempvec.size); 
 					
@@ -2957,7 +2964,7 @@ void new_plants(gsl_rng *r,float est)
 						sn = gsl_rng_uniform_int(r,SBMAX);// Pick one seed randomly to survive     
 				   //printf("Age of seedbank seed -> %d - seedbank number %d \n",pop[xc][yc].seedbank_age[sn], sn);
 				   //printf("Checking if seedbank seed exists!! S1: %d - S2: %d \n",  pop[xc][yc].seedbankid[sn][0][0], pop[xc][yc].seedbankid[sn][0][1]);
-				   if(pop[xc][yc].seedbankid[sn][0][0] == pop[xc][yc].seedbankid[sn][0][1])  exit(1);
+				   //if(pop[xc][yc].seedbankid[sn][0][0] == pop[xc][yc].seedbankid[sn][0][1])  exit(1);
 				   for(i=0;i<GENES;i++)
                      {
                             for(j=0;j<ALL;j++){
