@@ -937,13 +937,13 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
         if((plants=nplants(&veg,&rep,&age,minr))>1)
           {
             means1(g,mnv,mnr,myr,veg,rep,age);
-            //printf(" FLAG 5 \n"); 
+            printf(" FLAG 5 \n"); 
             means2(g,plants,gn1,gn2,gn3,gn4,gn5,gn6,gn7,Stype,vector_N_alleles);//means2(g,plants,new_sloc,new_nloc,gn1,gn2,gn3,gn4,gn5,gn6,gn7);
-            //printf(" FLAG 6 \n"); 
+            printf(" FLAG 6 \n"); 
             (*mean3)(g,rep,minr,pdist,sdist,ec1,ec2,ec3,nrp);
-            //printf(" FLAG 7 \n"); 
+            printf(" FLAG 7 \n"); 
             (*repro)(g,rep,minr,pdist,sdist,ft1,ft2,b0,d);
-            //printf(" FLAG 8 \n");    
+            printf(" FLAG 8 \n");    
             means4(g,rep,minr,ft3,ft4,ft5);
             if(cnt==0 && rr==0)
               plant_data(g,sloc,nloc);
@@ -958,8 +958,8 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
               if(gen_rescue_pool == 1)
                    genetic_rescue(r, pop_size_interv, minr, sloc, nloc, prob_new_S_allele, prob_new_allele, Stype, vector_N_alleles);
               plants=nplants(&veg,&rep,&age,minr);
-              //printf(" Population size after rescue: %d\n",plants);
-              //printf(" Genetic rescue: %d\n",gen_rescue_pool);
+              printf(" Population size after rescue: %d\n",plants);
+              printf(" Genetic rescue: %d\n",gen_rescue_pool);
               number_interv=1;
 		    }
 		    //printf(" Genetic rescue: %d\n",gen_rescue_pool);
@@ -978,9 +978,9 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 			}
 
 			new_plants(r,est);
-            //printf(" FLAG 2 \n"); 
+            printf(" FLAG 2 \n"); 
             means5(g,rep,ft6,ft7,ft8);
-            //printf(" FLAG 3 \n");
+            printf(" FLAG 3 \n");
           } 
         else break;
       }
@@ -1072,9 +1072,9 @@ void means2(int g,int plants,float **gn1,float **gn2,float **gn3,
           }
       }
     gene_data(g,plants,nloc,sloc,gn1,gn2,gn3,gn4,gn5,gn6,gn7,n_genes,si_gene,heteros);
-    //printf(" Flag means2 \n"); 
+    printf(" Flag means2 \n"); 
     free_fmatrix(n_genes,1,GENES-1,1,nloc);
-    //printf(" Flag means3 \n"); 
+    printf(" Flag means3 \n"); 
     free_fvector(si_gene,1,sloc);
     free_fvector(heteros,1,GENES-1);  
     return;
@@ -2781,7 +2781,7 @@ void kill_plants_agedep(gsl_rng *r, double lambda, double d)
               {
 				death_age_prob = lambda*exp(-lambda*pop[xc][yc].age) + d;
 				if(death_age_prob < 0.005) death_age_prob = 0.005;
-				//printf("Age-dependent mortality rate: %.2f \n", death_age_prob);
+				printf("Age-dependent mortality rate: %.2f \n", death_age_prob);
 				//printf("D (lambda): %.2f \n", lambda);
                 if((gsl_rng_uniform(r))<=death_age_prob) //g05cac()
                   {
