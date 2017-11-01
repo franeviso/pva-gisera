@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     Vector vector_N_alleles;
     vector_init(&vector_N_alleles);    
 
-    while((option = getopt(argc, argv,"r:g:o:n:s:f:m:v:l:M:B:D:xyzk:p:t:a:b:c:d:j:F:A:e:h:i:u:")) != -1)
+    while((option = getopt(argc, argv,"r:g:o:n:s:f:m:v:l:M:B:D:E:xyzk:p:t:a:b:c:d:j:F:A:e:h:i:u:")) != -1)
       {
 		 switch (option) {
              case 'r' : runs = atoi(optarg);
@@ -230,7 +230,9 @@ int main(int argc, char *argv[])
              case 'B' : b0 = atof(optarg);
                  break;                 
              case 'D' : d = atof(optarg);
-                 break;                 
+                 break;
+             case 'E' : est = atof(optarg);
+                 break;                                   
              case 'x' : safe_sites_bool = 1;
                  break;
              case 'y' : demo_rescue_bool = 1; 
