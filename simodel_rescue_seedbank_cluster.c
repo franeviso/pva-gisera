@@ -4,7 +4,7 @@
 //* Compilation lines:
 
 /// gcc -std=c99 -I/usr/include/gsl -Wall -o acacia simodel_rescue_seedbank.c vector.c -lgsl -lgslcblas -lncurses -lm
-// gcc -std=c99 -I/usr/include/gsl -Wall -o simo_cluster simodel_rescue_cluster.c vector.c -lgsl -lgslcblas -ltinfo -lncurses -lm
+// gcc -std=c99 -I/usr/include/gsl -Wall -o acacia simodel_rescue_seedbank_cluster.c vector.c -lgsl -lgslcblas -ltinfo -lncurses -lm
 // ./rescue -r 1 -g 500 -o 250 -n 3 -s 10 -f 0.25 -m 1.0 -v 0.0 -l 100 -x -z -k 0.2 -p 10 -t 50 -a 0.2 -b 0.1 -c 2 -d 2 -e demo -h gen -i fit -u indiv
 // ./simo_cluster -r 100 -g 500 -o 250 -n 3 -s 10 -f 0.25 -m 1.0 -v 0.0 -l 100 -p 10 -t 50 -a 0.2 -b 0.1 -c 2 -d 2 -e demo_control.dat -h gen_control.dat -i fit_control.dat -u indiv_control.dat 
 
@@ -964,13 +964,13 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
         if((plants=nplants(&veg,&rep,&age,minr))>1)
           {
             means1(g,mnv,mnr,myr,veg,rep,age);
-            //printf(" FLAG 5 \n"); 
+            printf(" FLAG 5 \n"); 
             means2(g,plants,gn1,gn2,gn3,gn4,gn5,gn6,gn7,Stype,vector_N_alleles);//means2(g,plants,new_sloc,new_nloc,gn1,gn2,gn3,gn4,gn5,gn6,gn7);
-            //printf(" FLAG 6 \n"); 
+            printf(" FLAG 6 \n"); 
             (*mean3)(g,rep,minr,pdist,sdist,ec1,ec2,ec3,nrp);
-            //printf(" FLAG 7 \n"); 
+            printf(" FLAG 7 \n"); 
             (*repro)(g,rep,minr,pdist,sdist,ft1,ft2,b0,d);
-            //printf(" FLAG 8 \n");    
+            printf(" FLAG 8 \n");    
             means4(g,rep,minr,ft3,ft4,ft5);
             if(cnt==0 && rr==0)
               plant_data(g,sloc,nloc);
@@ -1019,14 +1019,15 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 			}else{ /// NO FIRE
 				kill_plants_agedep(r,lambda,d);
 				//kill_plants(r,d);
+				printf(" FLAG SB \n"); 
 				seedbank_mortality(r,seedbank_mort);
 				new_plants(r,est);
 
 			}
             
-            //printf(" FLAG 2 \n"); 
+            printf(" FLAG 2 \n"); 
             means5(g,rep,ft6,ft7,ft8);
-            //printf(" FLAG 3 \n");
+            printf(" FLAG 3 \n");
           } 
         else break;
       }
@@ -2340,29 +2341,34 @@ void reproduce_nd(int g,int rep,int minr,int pdist,int sdist,float **ft1,
             if(pop[xc][yc].age>=minr)         
               {
                 lpd = 0;
-                (pop[xc][yc].age<=(1.0/d))?(ovn=b0*d*pop[xc][yc].age):(ovn=b0);
+                //printf("REPRO 1 \n");    
+                (pop[xc][yc].age<=(1.0/d))?(ovn=b0*d*pop[xc][yc].age):(ovn=b0);  
                 ((ovn-floor(ovn))<0.5)?(ovn=floor(ovn)):(ovn=ceil(ovn));
                 n_dads(xc,yc,pdist,minr,&dads,&tage,&tdst);
+                if(dads < 2)  continue;
                 xyval = imatrix(0,dads-1,0,1); 
                 probs = fvector(0,dads-1);
                 donor = ivector(0,dads-1);
                 for(i=0;i<dads;i++)
-                  donor[i] = OUT;
-                make_pollen_pool_d(xc,yc,pdist,xyval,probs,minr,tdst);      
+                  donor[i] = OUT;                     
+                make_pollen_pool_d(xc,yc,pdist,xyval,probs,minr,tdst);                        
                 for(i=0;i<ovn;i++)
                   {     
                     pd = make_pollen(r,ptype,xyval,probs,dads,&did);
+                    //printf("REPRO 4 \n"); 
                     donor[pd] = IN;
                     pop[xyval[pd][0]][xyval[pd][1]].fsd += 1;
                     pop[xc][yc].msd += 1;
                     make_ovule(r,xc,yc,otype,&mid);
+                    //printf("REPRO 5 \n"); 
                     make_seed(r,xc,yc,ptype,otype,sdist,did,mid);
                   }
                 for(i=0;i<dads;i++) /* count for local pollen donors */
                   if(donor[i]==IN)
                     lpd += 1;
                 tpd1 += lpd;   
-                tpd2 += lpd*lpd;       
+                tpd2 += lpd*lpd;
+                //printf("REPRO \n");       
                 free_imatrix(xyval,0,dads-1,0,1);
                 free_fvector(probs,0,dads-1);
                 free_ivector(donor,0,dads-1);
@@ -2737,13 +2743,14 @@ int make_pollen(gsl_rng *r, int *ptype,int **xyval,float *probs,int dads, int *d
           //printf(" For Rnum1= %.3f\n",rnum);
 	   }
     }
-	
+	//printf(" dads= %d\n",dads);
     for(i=0;i<=dads && !flg;i++){
       //printf("FLG = %d\n",flg);
       flg = rnum <= probs[i];
       //printf(" For dads= %d\n",flg);
       //printf(" For Probs= %.3f\n",probs[i]);
       //printf(" For Rnum2= %.3f\n",rnum);
+      //printf(" i= %d\n",i);
     }
     for(j=0;j<GENES;j++)
       {
