@@ -964,13 +964,13 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
         if((plants=nplants(&veg,&rep,&age,minr))>1)
           {
             means1(g,mnv,mnr,myr,veg,rep,age);
-            printf(" FLAG 5 \n"); 
+            //printf(" FLAG 5 \n"); 
             means2(g,plants,gn1,gn2,gn3,gn4,gn5,gn6,gn7,Stype,vector_N_alleles);//means2(g,plants,new_sloc,new_nloc,gn1,gn2,gn3,gn4,gn5,gn6,gn7);
-            printf(" FLAG 6 \n"); 
+            //printf(" FLAG 6 \n"); 
             (*mean3)(g,rep,minr,pdist,sdist,ec1,ec2,ec3,nrp);
-            printf(" FLAG 7 \n"); 
+            //printf(" FLAG 7 \n"); 
             (*repro)(g,rep,minr,pdist,sdist,ft1,ft2,b0,d);
-            printf(" FLAG 8 \n");    
+            //printf(" FLAG 8 \n");    
             means4(g,rep,minr,ft3,ft4,ft5);
             if(cnt==0 && rr==0)
               plant_data(g,sloc,nloc);
@@ -985,7 +985,7 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
               if(gen_rescue_pool == 1)
                    genetic_rescue(r, pop_size_interv, minr, sloc, nloc, prob_new_S_allele, prob_new_allele, Stype, vector_N_alleles);
               plants=nplants(&veg,&rep,&age,minr);
-              printf(" Population size after rescue: %d\n",plants);
+              //printf(" Population size after rescue: %d\n",plants);
               printf(" Genetic rescue: %d\n",gen_rescue_pool);
               number_interv=1;
 		    }
@@ -1019,15 +1019,15 @@ void SI_model(int gen,int minr,double d,int pdist,int sdist,float est,float **mn
 			}else{ /// NO FIRE
 				kill_plants_agedep(r,lambda,d);
 				//kill_plants(r,d);
-				printf(" FLAG SB \n"); 
+				//printf(" FLAG SB \n"); 
 				seedbank_mortality(r,seedbank_mort);
 				new_plants(r,est);
 
 			}
             
-            printf(" FLAG 2 \n"); 
+            //printf(" FLAG 2 \n"); 
             means5(g,rep,ft6,ft7,ft8);
-            printf(" FLAG 3 \n");
+            //printf(" FLAG 3 \n");
           } 
         else break;
       }
