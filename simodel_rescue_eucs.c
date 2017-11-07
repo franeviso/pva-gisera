@@ -2294,6 +2294,7 @@ void reproduce_nd(int g,int rep,int minr,int pdist,int sdist,float **ft1,
                 (pop[xc][yc].age<=(1.0/d))?(ovn=b0*d*pop[xc][yc].age):(ovn=b0);
                 ((ovn-floor(ovn))<0.5)?(ovn=floor(ovn)):(ovn=ceil(ovn));
                 n_dads(xc,yc,pdist,minr,&dads,&tage,&tdst);
+                if(dads < 2)  continue;
                 xyval = imatrix(0,dads-1,0,1); 
                 probs = fvector(0,dads-1);
                 donor = ivector(0,dads-1);
